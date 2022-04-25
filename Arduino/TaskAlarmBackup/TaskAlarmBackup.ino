@@ -3,6 +3,9 @@
 const int SW_pin=2;
 const int X_pin=0;
 const int Y_pin=1;
+const int Toggle_pin=7;
+enum toggleStates{tagSet, tagSetWait, dateSet, dateSetWait};
+enum toggleStates toggleState=dateSet;
 enum joystickStates{up,down,neutral, still};
 enum joystickStates joystickState=still;
 int currTask;
@@ -74,6 +77,31 @@ void  getCurrentTask(){
   }
   
 }
+
+
+void toggleCheck(){
+  switch(toggleState){
+    case tagSet:
+      if(digitalRead(Toggle_pin)==HIGH){
+        toggleState=tagSetWait;
+      }
+      break;
+    case tagSetWait:
+      if(digitalRead(Toggle_pin)==LOW){
+        toggleState=dateSet;
+      }
+      break;
+    case dateSet:
+      if(digitalRead(Toggle_pin)==HIGH){
+        toggleState=dateSetWait;
+      }
+      break;
+    case dateSetWait:
+      if(digitalRead(Toggle_pin)==LOW){
+        toggleState=tagSet;
+      }
+  }
+}
 // include the library code:
 
 // initialize the library by associating any needed LCD interface pin
@@ -87,18 +115,25 @@ String taskDueDates[taskNum]; //format: MM/DD
 
 void setup() {
   // set up the LCD's number of columns and rows:
-  tasks[0]="CS122A Labs"; taskTags[0]="CS122A"; taskDueDates[0]="04/29";
-  tasks[1]="Call Kelly"; taskTags[1]="Family"; taskDueDates[1]="04/25";
-  tasks[2]="Email Vahid"; taskTags[2]="CS122A"; taskDueDates[2]="04/30";
+  tasks[0]="Lab"; taskTags[0]="CS122A"; taskDueDates[0]="04/29";
+  tasks[1]="Call Claire"; taskTags[1]="CS175"; taskDueDates[1]="04/28";
+  tasks[2]="Project 1"; taskTags[2]="CS122A"; taskDueDates[2]="04/27";
   tasks[3]="Call Max"; taskTags[3]="Family"; taskDueDates[3]="05/01";
   tasks[4]="Meet w devs"; taskTags[4]="Sketch"; taskDueDates[4]="04/30";
-  tasks[5]="CS179N Demo"; taskTags[5]="CS179N"; taskDueDates[5]="04/29";
+  tasks[5]="Demo"; taskTags[5]="CS179N"; taskDueDates[5]="04/29";
+  tasks[6]="Lab 1-3 Demo"; taskTags[6]="CS110"; taskDueDates[6]="04/25";
+  tasks[7]="Meeting"; taskTags[7]="RHA"; taskDueDates[7]="04/25";
+  
   lcd.begin(16, 2);
   //Print a message to the LCD.
   
   
   pinMode(SW_pin, INPUT);  
   digitalWrite(SW_pin, HIGH);  
+  
+  pinMode(Toggle_pin,INPUT);
+  //digitalWrite(Toggle_pin, HIGH);
+  
   Serial.begin(9600); //must match baud rate!!!
   currTask=0;
   
@@ -122,11 +157,18 @@ void loop() {
     Serial.print(analogRead(Y_pin));  
     Serial.print("\n\n"); 
     getCurrentTask();
+    toggleCheck();
     lcd.clear();
     lcd.print(currTask+1);
     lcd.print(": "+tasks[currTask]);
     lcd.setCursor(0,1);
-    lcd.print(taskDueDates[currTask]);
+    if(toggleState==dateSet){
+      lcd.print(taskDueDates[currTask]);
+    }
+    if(toggleState==tagSet){
+      lcd.print(taskTags[currTask]);
+    }
+    
     Serial.print(currTask+1);
     Serial.print(": "+tasks[currTask]+"\n");
     
