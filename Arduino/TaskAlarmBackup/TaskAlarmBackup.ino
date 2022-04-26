@@ -11,6 +11,11 @@ enum joystickStates joystickState=still;
 int currTask;
 const int taskNum=20;
 
+//light info
+int red_light_pin= 10;
+int green_light_pin = 9;
+int blue_light_pin = 8;
+
 void  getCurrentTask(){
   switch(joystickState){
     case up:
@@ -23,7 +28,7 @@ void  getCurrentTask(){
       else{
         joystickState=still;
       }
-      Serial.print("state: up\n");
+      //Serial.print("state: up\n");
       break;
     case neutral:
       if(analogRead(Y_pin)>=550){
@@ -34,7 +39,7 @@ void  getCurrentTask(){
       }
       else{
         joystickState=neutral;
-        Serial.print("state: neutral\n");
+       //Serial.print("state: neutral\n");
       }
     break;
     case down:
@@ -48,13 +53,13 @@ void  getCurrentTask(){
         joystickState=still;
         
       }
-      Serial.print("state: down\n");
+      //Serial.print("state: down\n");
     break;
     case still:
       if(analogRead(Y_pin)>400 && analogRead(Y_pin)<550){
         joystickState=neutral;
       }
-      Serial.print("state: still\n");
+      //Serial.print("state: still\n");
       break;
     default:
     break;
@@ -102,6 +107,14 @@ void toggleCheck(){
       }
   }
 }
+
+void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
+ {
+  analogWrite(red_light_pin, red_light_value);
+  analogWrite(green_light_pin, green_light_value);
+  analogWrite(blue_light_pin, blue_light_value);
+}
+
 // include the library code:
 
 // initialize the library by associating any needed LCD interface pin
@@ -112,9 +125,28 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 String tasks[taskNum];
 String taskTags[taskNum];
 String taskDueDates[taskNum]; //format: MM/DD
+int today;
 
+void checkDueDate(){
+  //String day = taskDueDates[currTask][3]+taskDueDates[currTask][4];
+  int dayInt= (taskDueDates[currTask][3]-48)*10+taskDueDates[currTask][4]-48;
+  //dayInt=day.toInt();
+  Serial.print("Due Date diff: "+String(dayInt-today));
+  Serial.print("\n");
+  if(dayInt==today){
+    RGB_color(255,0,0);
+  }
+  else if(abs(dayInt-today)<4 || (dayInt<2 && today>28)){
+    RGB_color(255,255,0);
+  }
+  else{
+    RGB_color(0,255,0);
+  }
+}
 void setup() {
   // set up the LCD's number of columns and rows:
+  today=25;
+  
   tasks[0]="Lab"; taskTags[0]="CS122A"; taskDueDates[0]="04/29";
   tasks[1]="Call Claire"; taskTags[1]="CS175"; taskDueDates[1]="04/28";
   tasks[2]="Project 1"; taskTags[2]="CS122A"; taskDueDates[2]="04/27";
@@ -122,9 +154,13 @@ void setup() {
   tasks[4]="Meet w devs"; taskTags[4]="Sketch"; taskDueDates[4]="04/30";
   tasks[5]="Demo"; taskTags[5]="CS179N"; taskDueDates[5]="04/29";
   tasks[6]="Lab 1-3 Demo"; taskTags[6]="CS110"; taskDueDates[6]="04/25";
-  tasks[7]="Meeting"; taskTags[7]="RHA"; taskDueDates[7]="04/25";
+  tasks[7]="Meeting"; taskTags[7]="RHA"; taskDueDates[7]="04/25"; 
   
   lcd.begin(16, 2);
+
+  pinMode(red_light_pin, OUTPUT);
+  pinMode(green_light_pin, OUTPUT);
+  pinMode(blue_light_pin, OUTPUT);
   //Print a message to the LCD.
   
   
@@ -145,8 +181,7 @@ void loop() {
   // set the cursor to column 0, line 1
   // (note: line 1 is the second row, since counting begins with 0):
   lcd.setCursor(0, 0);
-  //print the number of seconds since reset:
-  //lcd.print(millis() / 1000);
+/*
     Serial.print("Switch: ");  
     Serial.print(digitalRead(SW_pin));  
     Serial.print("\n");  
@@ -155,7 +190,7 @@ void loop() {
     
     Serial.print(" Y-axis: ");  
     Serial.print(analogRead(Y_pin));  
-    Serial.print("\n\n"); 
+    Serial.print("\n\n"); */
     getCurrentTask();
     toggleCheck();
     lcd.clear();
@@ -168,6 +203,8 @@ void loop() {
     if(toggleState==tagSet){
       lcd.print(taskTags[currTask]);
     }
+    //RGB_color(taskLights[currTask*2],taskLights[currTask*2+1],0);
+    checkDueDate();
     
     Serial.print(currTask+1);
     Serial.print(": "+tasks[currTask]+"\n");
