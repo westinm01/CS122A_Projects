@@ -109,18 +109,17 @@ void sort(){
   }
   int border=0;
   for(int i=0;i<taskNum-1;i++){
-    border++;
     if(taskDueDates[i]!=""){
       break;
     }
-
+    border++;
   }
   //now have number of empty strings.
-  /*for(int i=0;i<border || border+i<19;i++){
+  for(int i=0;i<taskNum-border;i++){
     swap(taskTags,i,border+i);
     swap(tasks,i,border+i);
     swap(taskDueDates,i,border+i);
-  }*/
+  }
   
 }
 
