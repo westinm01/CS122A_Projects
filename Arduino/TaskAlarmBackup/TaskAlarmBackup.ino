@@ -1,4 +1,3 @@
-//this is a comment
 #include <LiquidCrystal.h>
 const int SW_pin=2;
 const int X_pin=0;
@@ -195,16 +194,7 @@ void loop() {
   // set the cursor to column 0, line 1
   // (note: line 1 is the second row, since counting begins with 0):
   lcd.setCursor(0, 0);
-/*
-    Serial.print("Switch: ");  
-    Serial.print(digitalRead(SW_pin));  
-    Serial.print("\n");  
-    Serial.print("X-axis: ");  
-    Serial.print(analogRead(X_pin));
-    
-    Serial.print(" Y-axis: ");  
-    Serial.print(analogRead(Y_pin));  
-    Serial.print("\n\n"); */
+
     getCurrentTask();
     toggleCheck();
     lcd.clear();

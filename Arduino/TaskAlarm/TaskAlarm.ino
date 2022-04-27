@@ -1,65 +1,20 @@
-/*
-  LiquidCrystal Library - Hello World
-
- Demonstrates the use a 16x2 LCD display.  The LiquidCrystal
- library works with all LCD displays that are compatible with the
- Hitachi HD44780 driver. There are many of them out there, and you
- can usually tell them by the 16-pin interface.
-
- This sketch prints "Hello World!" to the LCD
- and shows the time.
-
-  The circuit:
- * LCD RS pin to digital pin 12
- * LCD Enable pin to digital pin 11
- * LCD D4 pin to digital pin 5
- * LCD D5 pin to digital pin 4
- * LCD D6 pin to digital pin 3
- * LCD D7 pin to digital pin 2
- * LCD R/W pin to ground
- * LCD VSS pin to ground
- * LCD VCC pin to 5V
- * 10K resistor:
- * ends to +5V and ground
- * wiper to LCD VO pin (pin 3)
-
- Library originally added 18 Apr 2008
- by David A. Mellis
- library modified 5 Jul 2009
- by Limor Fried (http://www.ladyada.net)
- example added 9 Jul 2009
- by Tom Igoe
- modified 22 Nov 2010
- by Tom Igoe
- modified 7 Nov 2016
- by Arturo Guadalupi
-
- This example code is in the public domain.
-
- http://www.arduino.cc/en/Tutorial/LiquidCrystalHelloWorld
-
-*/
 #include <LiquidCrystal.h>
 const int SW_pin=2;
 const int X_pin=0;
 const int Y_pin=1;
-const int tagButton=3;
-bool organizeByTag;
-enum tagButtonState{tagOff, tagOn};
-enum tagButtonState tagButtonState=tagOff;
+const int Toggle_pin=52;
+const int Delete_pin=50;
+enum toggleStates{tagSet, tagSetWait, dateSet, dateSetWait};
+enum toggleStates toggleState=dateSet;
 enum joystickStates{up,down,neutral, still};
 enum joystickStates joystickState=still;
 int currTask;
-char col;
-int row;
-String cellID;
-String command;
-const int len = 60;
-const int taskAmount=20;
-char my_str[len];
-char pos = 0;
-bool change=false;
+const int taskNum=20;
 
+//light info
+int red_light_pin= 10;
+int green_light_pin = 9;
+int blue_light_pin = 8;
 
 void  getCurrentTask(){
   switch(joystickState){
@@ -84,7 +39,7 @@ void  getCurrentTask(){
       }
       else{
         joystickState=neutral;
-        //Serial.print("state: neutral\n");
+       //Serial.print("state: neutral\n");
       }
     break;
     case down:
@@ -112,17 +67,13 @@ void  getCurrentTask(){
   }
   switch(joystickState){
     case up:
-      if(currTask<taskAmount-1){
+      if(currTask<taskNum-1){
         currTask+=1;
-        row+=1;
-        change=true;
       }
      break;
      case down:
       if(currTask>0){
         currTask-=1;
-        row-=1;
-        change=true;
       }
      break;
      default:
@@ -132,55 +83,110 @@ void  getCurrentTask(){
   
 }
 
-void tagButtonCheck(){
-  switch(tagButtonState){
-    case tagOff:
-      if(organizeByTag){
-        tagButtonState=tagOn;
+
+void toggleCheck(){
+  switch(toggleState){
+    case tagSet:
+      if(digitalRead(Toggle_pin)==HIGH){
+        toggleState=tagSetWait;
       }
       break;
-    case tagOn:
-      if(organizeByTag){
-        tagButtonState=tagOff;
+    case tagSetWait:
+      if(digitalRead(Toggle_pin)==LOW){
+        toggleState=dateSet;
+      }
+      break;
+    case dateSet:
+      if(digitalRead(Toggle_pin)==HIGH){
+        toggleState=dateSetWait;
+      }
+      break;
+    case dateSetWait:
+      if(digitalRead(Toggle_pin)==LOW){
+        toggleState=tagSet;
       }
   }
 }
+
+void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
+ {
+  analogWrite(red_light_pin, red_light_value);
+  analogWrite(green_light_pin, green_light_value);
+  analogWrite(blue_light_pin, blue_light_value);
+}
+
+// include the library code:
 
 // initialize the library by associating any needed LCD interface pin
 // with the arduino pin number it is connected to
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 6;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-String tasks[taskAmount];
-String taskTags[taskAmount];
-String taskDueDates[taskAmount]; //format: MM/DD
+String tasks[taskNum];
+String taskTags[taskNum];
+String taskDueDates[taskNum]; //format: MM/DD
+int today;
 
+void checkDueDate()
+{
+  if(taskDueDates[currTask]==""){
+    RGB_color(0,0,0);
+    return;
+  }
+  int dayInt= (taskDueDates[currTask][3] - 48) * 10 + taskDueDates[currTask][4] - 48;
+  Serial.print("Due Date diff: " + String(dayInt - today));
+  Serial.print("\n");
+  if(dayInt == today)
+  {
+    RGB_color(255,0,0);
+  }
+  else if(abs(dayInt - today) < 4 || (dayInt < 2 && today > 28))
+  {
+    RGB_color(255,255,0);
+  }
+  else
+  {
+    RGB_color(0,255,0);
+  }
+}
+
+void deleteTask(){
+  tasks[currTask]="";
+  taskTags[currTask]="";
+  taskDueDates[currTask]="";
+}
 void setup() {
+  // set up the LCD's number of columns and rows:
+  today=25;
   
-  tasks[0]="CS122A Labs"; taskTags[0]="CS122A"; taskDueDates[0]="04/29";
-  tasks[1]="Call Kelly"; taskTags[1]="Family"; taskDueDates[1]="04/25";
-  tasks[2]="Email Vahid"; taskTags[2]="CS122A"; taskDueDates[2]="04/30";
+  tasks[0]="Lab"; taskTags[0]="CS122A"; taskDueDates[0]="04/29";
+  tasks[1]="Call Claire"; taskTags[1]="CS175"; taskDueDates[1]="04/28";
+  tasks[2]="Project 1"; taskTags[2]="CS122A"; taskDueDates[2]="04/27";
   tasks[3]="Call Max"; taskTags[3]="Family"; taskDueDates[3]="05/01";
   tasks[4]="Meet w devs"; taskTags[4]="Sketch"; taskDueDates[4]="04/30";
-  tasks[5]="CS179N Demo"; taskTags[5]="CS179N"; taskDueDates[5]="04/29";
-  // set up the LCD's number of columns and rows:
+  tasks[5]="Demo"; taskTags[5]="CS179N"; taskDueDates[5]="04/29";
+  tasks[6]="Lab 1-3 Demo"; taskTags[6]="CS110"; taskDueDates[6]="04/25";
+  tasks[7]="Meeting"; taskTags[7]="RHA"; taskDueDates[7]="04/25"; 
+  
   lcd.begin(16, 2);
+
+  pinMode(red_light_pin, OUTPUT);
+  pinMode(green_light_pin, OUTPUT);
+  pinMode(blue_light_pin, OUTPUT);
+  //Print a message to the LCD.
+  
   
   pinMode(SW_pin, INPUT);  
   digitalWrite(SW_pin, HIGH);  
-  pinMode(tagButton, INPUT);
-  organizeByTag=false;
+  
+  pinMode(Toggle_pin,INPUT);
+  pinMode(Delete_pin,INPUT);
+  //digitalWrite(Toggle_pin, HIGH);
+  
   Serial.begin(9600); //must match baud rate!!!
   currTask=0;
-  col='A';
-  row=2;
-  cellID=col+String(row);
-  command="=Sheet1!"+cellID;
-  Serial.print(command);
-  Serial.print("\n");
   
-  lcd.print(currTask+1);
-  lcd.print(": "+ tasks[currTask]);
+  lcd.print(currTask+1 +": "+tasks[currTask]);
   
 }
 
@@ -188,39 +194,27 @@ void loop() {
   // set the cursor to column 0, line 1
   // (note: line 1 is the second row, since counting begins with 0):
   lcd.setCursor(0, 0);
-  getCurrentTask();
-  
-  if(change){
-    cellID=col+String(row);
-    command="=Sheet1!"+cellID;
-    
 
-    Serial.print(command);
-    Serial.print("\n");
-
+    getCurrentTask();
+    toggleCheck();
     lcd.clear();
     lcd.print(currTask+1);
-    lcd.print(": "+ tasks[currTask]);
-    change=false;
-  }
-    delay(100);  
-}
-int incomingByte=0;
-void outputStuff(){
-  if(Serial.available()>0){
-      incomingByte=Serial.read();
-      my_str[pos] = incomingByte;
-      pos++;
-      if(incomingByte==10){
-        pos=0;
-      
-        lcd.print(my_str);
-      }
-      for(int i=0;i<=len-1;i++){
-        my_str[i] = 0;
-      }
+    lcd.print(": "+tasks[currTask]);
+    lcd.setCursor(0,1);
+    if(toggleState==dateSet){
+      lcd.print(taskDueDates[currTask]);
     }
-}
-void serialEvent(){
-  outputStuff();
+    if(toggleState==tagSet){
+      lcd.print(taskTags[currTask]);
+    }
+    //RGB_color(taskLights[currTask*2],taskLights[currTask*2+1],0);
+    checkDueDate();
+    
+    Serial.print(currTask+1);
+    Serial.print(": "+tasks[currTask]+"\n");
+    
+    if(digitalRead(Delete_pin)==HIGH){
+      deleteTask();
+    }
+    delay(100);  
 }
