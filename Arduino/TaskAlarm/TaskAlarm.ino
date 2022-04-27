@@ -4,7 +4,8 @@ const int X_pin=0;
 const int Y_pin=1;
 const int Toggle_pin=52;
 const int Delete_pin=50;
-const int Sort_pin=48;
+const int SortDueDate_pin=48;
+const int SortTag_pin=46;
 
 enum toggleStates{tagSet, tagSetWait, dateSet, dateSetWait};
 enum toggleStates toggleState=dateSet;
@@ -96,17 +97,7 @@ void swap(String arr[],int index, int index2){
   arr[index2]=temp;
 }
 
-void sort(){
-  
-  for(int i=0;i<taskNum-1;i++){
-    for(int j=0; j<taskNum-1;j++){
-      if(taskDueDates[j]>taskDueDates[j+1]){
-        swap(taskTags,j,j+1);
-        swap(tasks,j,j+1);
-        swap(taskDueDates,j,j+1);
-      }
-    }
-  }
+void moveEmptyStrings(){
   int border=0;
   for(int i=0;i<taskNum-1;i++){
     if(taskDueDates[i]!=""){
@@ -123,6 +114,32 @@ void sort(){
   
 }
 
+void sortByTag(){
+  for(int i=0;i<taskNum-1;i++){
+    for(int j=0; j<taskNum-1;j++){
+      if(taskTags[j]>taskTags[j+1]){
+        swap(taskTags,j,j+1);
+        swap(tasks,j,j+1);
+        swap(taskDueDates,j,j+1);
+      }
+    }
+  }
+  moveEmptyStrings();
+}
+
+void sortByDueDate(){
+  
+  for(int i=0;i<taskNum-1;i++){
+    for(int j=0; j<taskNum-1;j++){
+      if(taskDueDates[j]>taskDueDates[j+1]){
+        swap(taskTags,j,j+1);
+        swap(tasks,j,j+1);
+        swap(taskDueDates,j,j+1);
+      }
+    }
+  }
+  moveEmptyStrings();
+}
 
 void toggleCheck(){
   switch(toggleState){
@@ -218,7 +235,8 @@ void setup() {
   
   pinMode(Toggle_pin,INPUT);
   pinMode(Delete_pin,INPUT);
-  pinMode(Sort_pin,INPUT);
+  pinMode(SortDueDate_pin,INPUT);
+  pinMode(SortTag_pin,INPUT);
   //digitalWrite(Toggle_pin, HIGH);
   
   Serial.begin(9600); //must match baud rate!!!
@@ -254,8 +272,11 @@ void loop() {
     if(digitalRead(Delete_pin)==HIGH){
       deleteTask();
     }
-    if(digitalRead(Sort_pin)==HIGH){
-      sort();
+    if(digitalRead(SortDueDate_pin)==HIGH){
+      sortByDueDate();
+    }
+    if(digitalRead(SortTag_pin)==HIGH){
+      sortByTag();
     }
     delay(100);  
 }
