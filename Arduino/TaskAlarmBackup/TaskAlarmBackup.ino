@@ -3,7 +3,8 @@
 const int SW_pin=2;
 const int X_pin=0;
 const int Y_pin=1;
-const int Toggle_pin=7;
+const int Toggle_pin=52;
+const int Delete_pin=50;
 enum toggleStates{tagSet, tagSetWait, dateSet, dateSetWait};
 enum toggleStates toggleState=dateSet;
 enum joystickStates{up,down,neutral, still};
@@ -127,21 +128,33 @@ String taskTags[taskNum];
 String taskDueDates[taskNum]; //format: MM/DD
 int today;
 
-void checkDueDate(){
-  //String day = taskDueDates[currTask][3]+taskDueDates[currTask][4];
-  int dayInt= (taskDueDates[currTask][3]-48)*10+taskDueDates[currTask][4]-48;
-  //dayInt=day.toInt();
-  Serial.print("Due Date diff: "+String(dayInt-today));
+void checkDueDate()
+{
+  if(taskDueDates[currTask]==""){
+    RGB_color(0,0,0);
+    return;
+  }
+  int dayInt= (taskDueDates[currTask][3] - 48) * 10 + taskDueDates[currTask][4] - 48;
+  Serial.print("Due Date diff: " + String(dayInt - today));
   Serial.print("\n");
-  if(dayInt==today){
+  if(dayInt == today)
+  {
     RGB_color(255,0,0);
   }
-  else if(abs(dayInt-today)<4 || (dayInt<2 && today>28)){
+  else if(abs(dayInt - today) < 4 || (dayInt < 2 && today > 28))
+  {
     RGB_color(255,255,0);
   }
-  else{
+  else
+  {
     RGB_color(0,255,0);
   }
+}
+
+void deleteTask(){
+  tasks[currTask]="";
+  taskTags[currTask]="";
+  taskDueDates[currTask]="";
 }
 void setup() {
   // set up the LCD's number of columns and rows:
@@ -168,6 +181,7 @@ void setup() {
   digitalWrite(SW_pin, HIGH);  
   
   pinMode(Toggle_pin,INPUT);
+  pinMode(Delete_pin,INPUT);
   //digitalWrite(Toggle_pin, HIGH);
   
   Serial.begin(9600); //must match baud rate!!!
@@ -209,5 +223,8 @@ void loop() {
     Serial.print(currTask+1);
     Serial.print(": "+tasks[currTask]+"\n");
     
+    if(digitalRead(Delete_pin)==HIGH){
+      deleteTask();
+    }
     delay(100);  
 }
