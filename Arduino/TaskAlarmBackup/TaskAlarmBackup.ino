@@ -4,12 +4,20 @@ const int X_pin=0;
 const int Y_pin=1;
 const int Toggle_pin=52;
 const int Delete_pin=50;
+const int SortDueDate_pin=48;
+const int SortTag_pin=46;
+
 enum toggleStates{tagSet, tagSetWait, dateSet, dateSetWait};
 enum toggleStates toggleState=dateSet;
 enum joystickStates{up,down,neutral, still};
 enum joystickStates joystickState=still;
 int currTask;
 const int taskNum=20;
+
+String tasks[taskNum];
+String taskTags[taskNum];
+String taskDueDates[taskNum]; //format: MM/DD
+int today;
 
 //light info
 int red_light_pin= 10;
@@ -83,6 +91,56 @@ void  getCurrentTask(){
   
 }
 
+void swap(String arr[],int index, int index2){
+  String temp=arr[index];
+  arr[index]=arr[index2];
+  arr[index2]=temp;
+}
+
+void moveEmptyStrings(){
+  int border=0;
+  for(int i=0;i<taskNum-1;i++){
+    if(taskDueDates[i]!=""){
+      break;
+    }
+    border++;
+  }
+  //now have number of empty strings.
+  for(int i=0;i<taskNum-border;i++){
+    swap(taskTags,i,border+i);
+    swap(tasks,i,border+i);
+    swap(taskDueDates,i,border+i);
+  }
+  
+}
+
+//for bubble sort, I based the code from this video: https://www.youtube.com/watch?v=UNaiGgfHgzA&ab_channel=tsbrownie
+void sortByTag(){
+  for(int i=0;i<taskNum-1;i++){
+    for(int j=0; j<taskNum-1;j++){
+      if(taskTags[j]>taskTags[j+1]){
+        swap(taskTags,j,j+1);
+        swap(tasks,j,j+1);
+        swap(taskDueDates,j,j+1);
+      }
+    }
+  }
+  moveEmptyStrings();
+}
+
+void sortByDueDate(){
+  
+  for(int i=0;i<taskNum-1;i++){
+    for(int j=0; j<taskNum-1;j++){
+      if(taskDueDates[j]>taskDueDates[j+1]){
+        swap(taskTags,j,j+1);
+        swap(tasks,j,j+1);
+        swap(taskDueDates,j,j+1);
+      }
+    }
+  }
+  moveEmptyStrings();
+}
 
 void toggleCheck(){
   switch(toggleState){
@@ -122,10 +180,7 @@ void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 6;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-String tasks[taskNum];
-String taskTags[taskNum];
-String taskDueDates[taskNum]; //format: MM/DD
-int today;
+
 
 void checkDueDate()
 {
@@ -181,6 +236,8 @@ void setup() {
   
   pinMode(Toggle_pin,INPUT);
   pinMode(Delete_pin,INPUT);
+  pinMode(SortDueDate_pin,INPUT);
+  pinMode(SortTag_pin,INPUT);
   //digitalWrite(Toggle_pin, HIGH);
   
   Serial.begin(9600); //must match baud rate!!!
@@ -215,6 +272,12 @@ void loop() {
     
     if(digitalRead(Delete_pin)==HIGH){
       deleteTask();
+    }
+    if(digitalRead(SortDueDate_pin)==HIGH){
+      sortByDueDate();
+    }
+    if(digitalRead(SortTag_pin)==HIGH){
+      sortByTag();
     }
     delay(100);  
 }
