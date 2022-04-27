@@ -114,6 +114,7 @@ void moveEmptyStrings(){
   
 }
 
+//for bubble sort, I based the code from this video: https://www.youtube.com/watch?v=UNaiGgfHgzA&ab_channel=tsbrownie
 void sortByTag(){
   for(int i=0;i<taskNum-1;i++){
     for(int j=0; j<taskNum-1;j++){
