@@ -19,6 +19,11 @@ String taskTags[taskNum];
 String taskDueDates[taskNum]; //format: MM/DD
 int today;
 
+String undoTasks;
+String undoTaskTags;
+String undoTaskDueDates;
+bool isUndoValid;
+
 //light info
 int red_light_pin= 10;
 int green_light_pin = 9;
@@ -206,22 +211,41 @@ void checkDueDate()
 }
 
 void deleteTask(){
+  undoTasks=tasks[currTask];
+  undoTaskTags=taskTags[currTask];
+  undoTaskDueDates=taskDueDates[currTask];
   tasks[currTask]="";
   taskTags[currTask]="";
   taskDueDates[currTask]="";
+  isUndoValid = true;
 }
+
+
+void undoDelete(){
+  if(isUndoValid){
+    for(int i = 0; i < taskNum; i++){
+      if(tasks[currTask]==""){
+        //insert task here.
+        tasks[currTask] = undoTasks;
+        taskTags[currTask] = undoTaskTags;
+        taskDueDates[currTask] = undoTaskDueDates;
+      }
+    }
+  }
+}
+
 void setup() {
   // set up the LCD's number of columns and rows:
-  today=25;
+  today=29;
   
-  tasks[0]="Lab"; taskTags[0]="CS122A"; taskDueDates[0]="04/29";
-  tasks[1]="Call Claire"; taskTags[1]="CS175"; taskDueDates[1]="04/28";
-  tasks[2]="Project 1"; taskTags[2]="CS122A"; taskDueDates[2]="04/27";
+  tasks[0]="Lab"; taskTags[0]="CS122A"; taskDueDates[0]="05/02";
+  tasks[1]="Call Claire"; taskTags[1]="CS175"; taskDueDates[1]="04/30";
+  tasks[2]="Project 1"; taskTags[2]="CS122A"; taskDueDates[2]="04/29";
   tasks[3]="Call Max"; taskTags[3]="Family"; taskDueDates[3]="05/01";
   tasks[4]="Meet w devs"; taskTags[4]="Sketch"; taskDueDates[4]="04/30";
   tasks[5]="Demo"; taskTags[5]="CS179N"; taskDueDates[5]="04/29";
-  tasks[6]="Lab 1-3 Demo"; taskTags[6]="CS110"; taskDueDates[6]="04/25";
-  tasks[7]="Meeting"; taskTags[7]="RHA"; taskDueDates[7]="04/25"; 
+  tasks[6]="Lab 1-3 Demo"; taskTags[6]="CS110"; taskDueDates[6]="05/03";
+  tasks[7]="Meeting"; taskTags[7]="RHA"; taskDueDates[7]="05/02"; 
   
   lcd.begin(16, 2);
 
@@ -244,7 +268,7 @@ void setup() {
   currTask=0;
   
   lcd.print(currTask+1 +": "+tasks[currTask]);
-  
+  isUndoValid=false;
 }
 
 void loop() {
