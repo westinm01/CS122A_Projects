@@ -7,7 +7,7 @@ enum joystickStates{up,down,neutral, still};
 enum joystickStates joystickState=still;
 const int len = 10;
 String taskNames[len];
-String incomingData;
+int incomingData;
 int currTask;
 int newTask;
 
@@ -104,11 +104,20 @@ void setup() {
 
 
 void serialEvent(){
-  if(Serial.available()>0){
+  while(Serial.available()>0){
     incomingData = Serial.read();
-    taskNames[newTask]=incomingData;
-    newTask++;
+    if(incomingData==','){
+      
+    }
+    else{
+    char x = incomingData;
+    taskNames[newTask]+=x;
+    }
   }
+  if(newTask<len){
+      newTask++;
+    }
+    
 }
 void loop() {
   // put your main code here, to run repeatedly:
@@ -118,11 +127,25 @@ void loop() {
   Serial.print(command);
   Serial.print(",");
   getCurrentTask();
+  //Serial.print("Hiya");
+  /*if(Serial.available()==1){
+    if(newTask<len-1){
+      newTask++;
+    }
+  }*/
+  /*if(Serial.available()>0){
+    incomingData = Serial.read();
+    char x = incomingData;
+    tasknames[newTask]+=x;
+    //taskNames[newTask]+=incomingData;
+    
+  }*/
+  
   lcd.clear();
   lcd.print(currTask+1);
   lcd.print(": "+taskNames[currTask]);
-  Serial.print(currTask+1);
-  Serial.print(","+taskNames[currTask]+",");
+  //Serial.print(currTask+1 + ",");
+  //Serial.print(","+taskNames[currTask]+",");
     
     delay(100);  
 }

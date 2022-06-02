@@ -1,4 +1,10 @@
 #include <LiquidCrystal.h>
+#include <Wire.h>
+#include <TimeLib.h>
+#include <DS1307RTC.h>
+
+tmElements_t tm;//time info
+
 const int SW_pin=2;
 const int X_pin=0;
 const int Y_pin=1;
@@ -6,6 +12,7 @@ const int Toggle_pin=52;
 const int Delete_pin=50;
 const int SortDueDate_pin=48;
 const int SortTag_pin=46;
+const int UndoDelete_pin=44;
 
 enum toggleStates{tagSet, tagSetWait, dateSet, dateSetWait};
 enum toggleStates toggleState=dateSet;
@@ -18,6 +25,11 @@ String tasks[taskNum];
 String taskTags[taskNum];
 String taskDueDates[taskNum]; //format: MM/DD
 int today;
+
+String undoTasks="";
+String undoTaskTags="";
+String undoTaskDueDates="";
+bool isUndoValid;
 
 //light info
 int red_light_pin= 10;
@@ -184,44 +196,96 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void checkDueDate()
 {
-  if(taskDueDates[currTask]==""){
-    RGB_color(0,0,0);
-    return;
-  }
-  int dayInt= (taskDueDates[currTask][3] - 48) * 10 + taskDueDates[currTask][4] - 48;
-  Serial.print("Due Date diff: " + String(dayInt - today));
-  Serial.print("\n");
-  if(dayInt == today)
-  {
-    RGB_color(255,0,0);
-  }
-  else if(abs(dayInt - today) < 4 || (dayInt < 2 && today > 28))
-  {
-    RGB_color(255,255,0);
-  }
-  else
-  {
-    RGB_color(0,255,0);
+  
+  if(RTC.read(tm)){
+    if(taskDueDates[currTask]==""){
+      RGB_color(0,0,0);
+      return;
+    }
+    int dueDay = (taskDueDates[currTask][3]-48)*10 + taskDueDates[currTask][4]-48;
+    int dueMonth = (taskDueDates[currTask][0]-48)*10 + taskDueDates[currTask][1]-48;
+    int dayOfYear = (dueMonth-1)*30 + dueDay;
+    int today = tm.Day;
+    int thisMonth = tm.Month;
+    int thisDayOfYear = (tm.Month-1)*30 + tm.Day;
+    if(thisDayOfYear>dayOfYear){
+      dayOfYear+=365;
+    }
+    int diff = dayOfYear-thisDayOfYear;
+    Serial.print(String(dayOfYear) + " - " + String(thisDayOfYear)+ " = " + String(diff) + "\n");
+    if(diff==0){
+      //red
+      RGB_color(255,0,0);
+    }
+    
+    else if(diff<3 && diff<7){
+      //yellow
+      RGB_color(255,255,0);
+    }
+    else{
+      //green
+      RGB_color(0,255,0);
+    }
+    //currently working on implementing time feature...
   }
 }
 
+int deleteCheck = 0;
 void deleteTask(){
-  tasks[currTask]="";
-  taskTags[currTask]="";
-  taskDueDates[currTask]="";
+  if(deleteCheck){
+    undoTasks=tasks[currTask];
+    undoTaskTags=taskTags[currTask];
+    undoTaskDueDates=taskDueDates[currTask];
+  
+    tasks[currTask]="";
+    taskTags[currTask]="";
+    taskDueDates[currTask]=""; 
+    //Serial.print(undoTasks +" "+ undoTaskTags + " " + undoTaskDueDates + "\n");
+    isUndoValid = true;
+    deleteCheck=0;
+  }
 }
+
+
+void undoDelete(){//works half the time...
+  if(isUndoValid){
+    isUndoValid=false;
+    //tasks[currTask]=undoTasks;
+    
+    //Serial.print("Attempting to undo " + undoTasks+ "\n");
+    for(int i = 0; i < taskNum; i++){
+      if(tasks[i]==""){
+        //insert task here.
+       // Serial.print("Task now in " + String(i+1) + "\n");
+        tasks[i] = undoTasks;
+        taskTags[i] = undoTaskTags;
+        taskDueDates[i] = undoTaskDueDates;
+        break;
+      }
+    }
+  }
+}
+
+//print2digits function from RTC DS1307 Package example sketch called: ReadTest
+void print2digits(int number) {
+  if (number >= 0 && number < 10) {
+    Serial.write('0');
+  }
+  Serial.print(number);
+}
+
 void setup() {
   // set up the LCD's number of columns and rows:
-  today=25;
+  today=29;
   
-  tasks[0]="Lab"; taskTags[0]="CS122A"; taskDueDates[0]="04/29";
-  tasks[1]="Call Claire"; taskTags[1]="CS175"; taskDueDates[1]="04/28";
-  tasks[2]="Project 1"; taskTags[2]="CS122A"; taskDueDates[2]="04/27";
-  tasks[3]="Call Max"; taskTags[3]="Family"; taskDueDates[3]="05/01";
-  tasks[4]="Meet w devs"; taskTags[4]="Sketch"; taskDueDates[4]="04/30";
-  tasks[5]="Demo"; taskTags[5]="CS179N"; taskDueDates[5]="04/29";
-  tasks[6]="Lab 1-3 Demo"; taskTags[6]="CS110"; taskDueDates[6]="04/25";
-  tasks[7]="Meeting"; taskTags[7]="RHA"; taskDueDates[7]="04/25"; 
+  tasks[0]="Project"; taskTags[0]="CS110"; taskDueDates[0]="06/02";
+  tasks[1]="Final Exam"; taskTags[1]="CS122A"; taskDueDates[1]="06/02";
+  tasks[2]="Project 2"; taskTags[2]="CS122A"; taskDueDates[2]="06/02";
+  tasks[3]="Meet w/ Nick"; taskTags[3]="Friends"; taskDueDates[3]="06/01";
+  tasks[4]="Finish Speech"; taskTags[4]="Graduation"; taskDueDates[4]="06/06";
+  tasks[5]="Game Demo"; taskTags[5]="CS179N"; taskDueDates[5]="06/03";
+  tasks[6]="Product Pitch"; taskTags[6]="CS175"; taskDueDates[6]="06/07";
+  tasks[7]="Meet w/ Team"; taskTags[7]="CS175"; taskDueDates[7]="06/04"; 
   
   lcd.begin(16, 2);
 
@@ -238,23 +302,25 @@ void setup() {
   pinMode(Delete_pin,INPUT);
   pinMode(SortDueDate_pin,INPUT);
   pinMode(SortTag_pin,INPUT);
+  pinMode(UndoDelete_pin,INPUT);
   //digitalWrite(Toggle_pin, HIGH);
   
   Serial.begin(9600); //must match baud rate!!!
   currTask=0;
   
   lcd.print(currTask+1 +": "+tasks[currTask]);
-  
+  isUndoValid=false;
 }
 
 void loop() {
   // set the cursor to column 0, line 1
   // (note: line 1 is the second row, since counting begins with 0):
   lcd.setCursor(0, 0);
-
+     
     getCurrentTask();
     toggleCheck();
     lcd.clear();
+    
     lcd.print(currTask+1);
     lcd.print(": "+tasks[currTask]);
     lcd.setCursor(0,1);
@@ -267,11 +333,17 @@ void loop() {
     //RGB_color(taskLights[currTask*2],taskLights[currTask*2+1],0);
     checkDueDate();
     
-    Serial.print(currTask+1);
-    Serial.print(": "+tasks[currTask]+"\n");
+    //Serial.print(currTask+1);
+    //Serial.print(": "+tasks[currTask]+"\n");
     
     if(digitalRead(Delete_pin)==HIGH){
       deleteTask();
+    }
+    else{
+      deleteCheck=1;
+    }
+    if(digitalRead(UndoDelete_pin)==HIGH){
+      undoDelete();
     }
     if(digitalRead(SortDueDate_pin)==HIGH){
       sortByDueDate();
@@ -279,5 +351,6 @@ void loop() {
     if(digitalRead(SortTag_pin)==HIGH){
       sortByTag();
     }
+    Serial.print("Loop: " + undoTasks+ "\n");
     delay(100);  
 }
