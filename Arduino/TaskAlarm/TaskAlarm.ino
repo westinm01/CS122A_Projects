@@ -281,7 +281,7 @@ void setup() {
   tasks[0]="Project"; taskTags[0]="CS110"; taskDueDates[0]="06/02";
   tasks[1]="Final Exam"; taskTags[1]="CS122A"; taskDueDates[1]="06/02";
   tasks[2]="Project 2"; taskTags[2]="CS122A"; taskDueDates[2]="06/02";
-  tasks[3]="Meet w/ Nick"; taskTags[3]="Friends"; taskDueDates[3]="06/01";
+  tasks[3]="Move Back Home"; taskTags[3]="Family"; taskDueDates[3]="06/04";
   tasks[4]="Finish Speech"; taskTags[4]="Graduation"; taskDueDates[4]="06/06";
   tasks[5]="Game Demo"; taskTags[5]="CS179N"; taskDueDates[5]="06/03";
   tasks[6]="Product Pitch"; taskTags[6]="CS175"; taskDueDates[6]="06/07";

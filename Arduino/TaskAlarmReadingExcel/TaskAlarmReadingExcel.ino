@@ -102,18 +102,25 @@ void setup() {
 }
 
 
-
+String oldPhrase="";
+String currentPhrase="";
 void serialEvent(){
   while(Serial.available()>0){
     incomingData = Serial.read();
-    if(incomingData==','){
+    if(incomingData==',' || incomingData=='\0'){
       
     }
     else{
     char x = incomingData;
-    taskNames[newTask]+=x;
+    //taskNames[newTask]+=x;
+    currentPhrase+=x;
     }
   }
+  if(currentPhrase==oldPhrase){
+    return;
+  }
+  oldPhrase=currentPhrase;
+  taskNames[newTask] = currentPhrase;
   if(newTask<len){
       newTask++;
     }
